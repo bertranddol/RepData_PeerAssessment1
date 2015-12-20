@@ -9,7 +9,9 @@ output:
 
 ````{r}
 wd <- setwd("/Users/bdolimier/persodev/RepData_PeerAssessment1")
-acti <- read.csv("activity.csv" , header=TRUE, sep = ",", na.strings = "NA")
+raw <- read.csv("activity.csv" , header=TRUE, sep = ",", na.strings = "NA")
+acti <- raw
+filled <- raw
 acti[is.na(acti)] <- 0
 ````
 
@@ -43,8 +45,7 @@ plot( intAg$x, type="l", ylim=range(intAg$Group.1/12), axes=F, ann=T, xlab="Hour
 box(lwd=1)
 title("Daily Step pattern", sub = "by 5 minutes interval",
       cex.main = 1.5,   font.main= 4, col.main= "blue",
-      cex.sub = .8, font.sub = 4, col.sub = "black")
-
+      cex.sub = .8,   font.sub = 4, col.sub = "black")
 
 hlabelScale<-c(0:24)*12
 hlabelHour <- c(0:24)
@@ -60,8 +61,70 @@ text( -12 , vlabelScale , srt=0, adj=1,
 ````
 
 
-## Imputing missing values
+## Inputing missing values
 
+````{r }
+# replacing null value by average
+acti[is.na(filled)] <- avg/288
+intAg2 <- aggregate(acti$steps, by=list(acti$interval), FUN=mean)
 
+plot( intAg2$x, type="l", ylim=range(intAg2$Group.1/12), axes=F, ann=T, xlab="Hour",
+   ylab="Steps", cex.lab=1, lwd=2)
+
+box(lwd=1)
+title("Daily Step pattern - null values extrapolated", sub = "by 5 minutes interval",
+      cex.main = 1.5,   font.main= 4, col.main= "blue",
+      cex.sub = .8,   font.sub = 4, col.sub = "black")
+
+hlabelScale<-c(0:24)*12
+hlabelHour <- c(0:24)
+text( hlabelScale+3 , -13 , srt=0, adj=1,
+          labels=hlabelHour,
+          xpd=T, cex=0.9)
+
+vlabelScale<-c(0:18)*10
+vlabelHour <- c(0:18)*10
+text( -12 , vlabelScale , srt=0, adj=1,
+          labels=vlabelHour,
+          xpd=T, cex=0.9)
+````
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+````{r }
+acti$day <- weekdays(as.Date(acti$date),abbreviate=TRUE)
+
+# week days
+wd <- acti[acti$day %in% c("Mon", "Tue", "Wen" , "Thu" , "Fri" ), ]
+intAg2 <- aggregate(wd$steps, by=list(wd$interval), FUN=mean)
+
+plot( intAg2$x, type="l", ylim=range(intAg2$Group.1/10), col="red" , axes=F, ann=T, xlab="Hour",   ylab="Steps", cex.lab=1, lwd=2)
+lines( intAg2$x , type="l", lty=2, lwd=2,   col="red")
+
+# week ends
+we <- acti[acti$day %in% c("Sat", "Sun"), ]
+intAg <- aggregate(we$steps, by=list(we$interval), FUN=mean)
+lines( intAg$x , type="l", lty=2, lwd=2,   col="blue")
+
+# labels, axis, title, box...
+box(lwd=1)
+title("Daily Step pattern - Week days vs Week-ends", sub = "by 5 minutes interval",
+      cex.main = 1.5,   font.main= 4, col.main= "blue",
+      cex.sub = .8,   font.sub = 4, col.sub = "black")
+
+hlabelScale<-c(0:24)*12
+hlabelHour <- c(0:24)
+text( hlabelScale+3 , -13 , srt=0, adj=1,
+          labels=hlabelHour,
+          xpd=T, cex=0.9)
+
+vlabelScale<-c(0:18)*10
+vlabelHour <- c(0:18)*10
+text( -12 , vlabelScale , srt=0, adj=1,
+          labels=vlabelHour,
+          xpd=T, cex=0.9)
+weeks <- c("Week Days","Week-Ends")
+legend("topleft", weeks, cex=0.8, col=c("red","blue"), 
+   lty=1:3, lwd=2, bty="n");
+
+````
