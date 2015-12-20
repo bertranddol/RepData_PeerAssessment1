@@ -1,11 +1,12 @@
 # Reproducible Research: Peer Assessment 1
 
 ## Loading and preprocessing the data
-
+Load 61 days (2 months) of physical activity for time analysis
 
 ```r
-wd <- setwd("/Users/bdolimier/persodev/RepData_PeerAssessment1")
-acti <- read.csv("activity.csv" , header=TRUE, sep = ",", na.strings = "NA")
+#wd <- setwd("/Users/bdolimier/persodev/RepData_PeerAssessment1")
+raw <- read.csv("activity.csv" , header=TRUE, sep = ",", na.strings = "NA")
+acti <- raw
 acti[is.na(acti)] <- 0
 ```
 
@@ -17,7 +18,8 @@ tot <- colSums(acti[1], na.rm = TRUE, dims = 1)
 nbDays <- sum(!duplicated(acti[2]))
 avg <- tot / nbDays
 ```
-### Total number of steps, average per day:
+
+Total number of steps:
 
 ```r
 print(tot)
@@ -26,6 +28,8 @@ print(tot)
  steps 
 570608 
 
+Average number of Steps per day:
+
 ```r
 print(avg)
 ```
@@ -33,15 +37,17 @@ print(avg)
   steps 
 9354.23 
 
-### Daily Steps histogram:
+Daily Steps histogram:
 
 ```r
-colors = c("red" , "#ff6666", "yellow", "#66aa66" , "#00ff99" ) 
+colors = c("red" , "#ff6666", "yellow", "#99ff99" , "#00ff00" ) 
 ag <- aggregate(acti$steps, by=list(acti$date), FUN=sum)[2]
 hist( ag$x , col=colors , main= "Daily Step count frequency" , xlab="Total Daily step count")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png) 
+
+***Clearly, on a normal day, our test subject walk between 10k and 15k steps, with more very inactive days than very active days...***
 
 ## What is the average daily activity pattern?
 
@@ -54,8 +60,7 @@ plot( intAg$x, type="l", ylim=range(intAg$Group.1/12), axes=F, ann=T, xlab="Hour
 box(lwd=1)
 title("Daily Step pattern", sub = "by 5 minutes interval",
       cex.main = 1.5,   font.main= 4, col.main= "blue",
-      cex.sub = .8, font.sub = 4, col.sub = "black")
-
+      cex.sub = .8,   font.sub = 4, col.sub = "black")
 
 hlabelScale<-c(0:24)*12
 hlabelHour <- c(0:24)
@@ -70,11 +75,89 @@ text( -12 , vlabelScale , srt=0, adj=1,
           xpd=T, cex=0.9)
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-5-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
+
+***Subject has a very consistant routine, wakes up at 6:00am, likely walk to work between 8:00am and 9:00am with  an abolute peak at 8:45am, get up at noon ( presumatly for lunch ;=) ) and leave work usually at 4:00pm with  activity until 7:00pm... rarely fall asleep after 10:00pm***
 
 
-## Imputing missing values
+## Inputing missing values
 
 
+```r
+# replacing null value by average
+raw[is.na(raw)] <- avg/288
+intAg <- aggregate(raw$steps, by=list(raw$interval), FUN=mean)
 
+plot( intAg$x, type="l", ylim=range(intAg$Group.1/12), axes=F, ann=T, xlab="Hour",
+   ylab="Steps", cex.lab=1, lwd=2)
+
+box(lwd=1)
+title("Daily Step pattern - null values extrapolated", sub = "by 5 minutes interval",
+      cex.main = 1.5,   font.main= 4, col.main= "blue",
+      cex.sub = .8,   font.sub = 4, col.sub = "black")
+
+hlabelScale<-c(0:24)*12
+hlabelHour <- c(0:24)
+text( hlabelScale+3 , -13 , srt=0, adj=1,
+          labels=hlabelHour,
+          xpd=T, cex=0.9)
+
+vlabelScale<-c(0:18)*10
+vlabelHour <- c(0:18)*10
+text( -12 , vlabelScale , srt=0, adj=1,
+          labels=vlabelHour,
+          xpd=T, cex=0.9)
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png) 
+
+***No significant differences. The dataset with its missing values is most likely a fairly accurate representation of the full pedometer activity of the subject... *** 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+
+```r
+acti$day <- weekdays(as.Date(acti$date),abbreviate=TRUE)
+
+# week days
+wd <- acti[acti$day %in% c("Mon", "Tue", "Wen" , "Thu" , "Fri" ), ]
+intAg <- aggregate(wd$steps, by=list(wd$interval), FUN=mean)
+
+plot( intAg$x, type="l", ylim=range(intAg$Group.1/6), col="red" , axes=F, ann=T, xlab="Hour",   ylab="Steps", cex.lab=1, lwd=2)
+lines( intAg$x , type="l", lty=2, lwd=2,   col="red")
+
+# week ends
+we <- acti[acti$day %in% c("Sat", "Sun"), ]
+intAg <- aggregate(we$steps, by=list(we$interval), FUN=mean)
+lines( intAg$x , type="l", lty=2, lwd=2,   col="blue")
+
+# labels, axis, title, box...
+box(lwd=1)
+title("Daily Step pattern - Week days vs Week-ends", sub = "by 5 minutes interval",
+      cex.main = 1.5,   font.main= 4, col.main= "blue",
+      cex.sub = .8,   font.sub = 4, col.sub = "black")
+
+hlabelScale<-c(0:24)*12
+hlabelHour <- c(0:24)
+text( hlabelScale+4 , -24 , srt=0, adj=1,
+          labels=hlabelHour,
+          xpd=T, cex=0.9)
+
+vlabelScale<-c(0:20)*20
+vlabelHour <- c(0:20)*10
+text( -12 , vlabelScale , srt=0, adj=1,
+          labels=vlabelHour,
+          xpd=T, cex=0.9)
+
+weeks <- c("Week Days","Week-End")
+legend("topleft", weeks, cex=0.8, col=c("red","blue"), 
+   lty=1:3, lwd=2, bty="n");
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png) 
+
+***Our subject is more active on week-ends, with clear peaks of activities around regular meal hours... also appears to sleep an extra hour.***
+
+..
+...
+
+*bdolimier - Dec. 20 2015* 
